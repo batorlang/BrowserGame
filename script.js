@@ -61,6 +61,10 @@ class PlayGame extends Phaser.Scene {
     preload() {
         this.load.image("player", "assets/player.png");
         this.load.image("enemy", "assets/application.png");
+        this.load.spritesheet("playerMove", "assets/spritesheet.png", {
+            frameWidth: 220,
+            frameHeight: 220
+        });
     }
 
     create() {
@@ -86,10 +90,19 @@ class PlayGame extends Phaser.Scene {
 
 
         //player spawn
-        this.player = this.physics.add.image(120, 360, "player");
-        this.player.setDisplaySize(80, 80);
-        this.player.body.setCircle(150, 100, 100); //This is the hitbox of the player
+       
+        this.player = this.physics.add.sprite(120, 360, "player");
+        this.setPlayerTexture("player", 500);
         this.player.setCollideWorldBounds(true); //Stopping the cat from leaving the playing area
+
+        if (!this.anims.exists("walk")) {
+            this.anims.create({
+                key: "walk",
+                frames: this.anims.generateFrameNumbers("playerMove", { start: 0, end: 19 }),
+                frameRate: 12,
+                repeat: -1
+            });
+        }
 
         //collisions
         this.physics.add.overlap(this.playerLaser, this.enemies, this.hitEnemy, null, this); //player hits enemy
@@ -136,6 +149,13 @@ class PlayGame extends Phaser.Scene {
         const vector = new Phaser.Math.Vector2(vx, vy);
         if (vector.lengthSq() > 0) vector.normalize().scale(gameOptions.playerSpeed);
         this.player.setVelocity(vector.x, vector.y);
+        if (vector.lengthSq() > 0) {
+            if (this.player.texture.key !== "playerMove") this.setPlayerTexture("playerMove", 220);
+            this.player.anims.play("walk", true);
+        } else if (this.player.texture.key !== "player") {
+            this.player.anims.stop();
+            this.setPlayerTexture("player", 500);
+        }
 
 
         //enemy moves slowly towards the player
@@ -221,7 +241,11 @@ class PlayGame extends Phaser.Scene {
     }
 
 
-   
+    setPlayerTexture(key, size) {
+        this.player.setTexture(key);
+        this.player.setDisplaySize(80, 80);
+        this.player.body.setCircle(size * 0.3, size * 0.2, size * 0.2);
+    }
 
     //updateUI
     updateUI() {
